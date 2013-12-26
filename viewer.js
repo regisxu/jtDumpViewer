@@ -2,22 +2,22 @@ var threads = parse(document.getElementsByTagName("p")[0].textContent);
 var list = document.getElementById("list");
 for (var i = 0; i < threads.length; ++i) {
 	var thread = threads[i];
-    var element = document.createElement("div");
+    var te = document.createElement("div");
 	if (thread.id != null) {
-		element.setAttribute("id", thread.id);
+		te.setAttribute("id", thread.id);
 	}
 	var name = document.createElement("span");
 	name.setAttribute("class", "tname");
 	name.setAttribute("name", thread.id);
 	name.setAttribute("onclick", "toggleHidden(\"" + thread.id + "\")");
-	element.appendChild(name);
-	list.appendChild(element);
+	te.appendChild(name);
+	list.appendChild(te);
     var text = document.createTextNode(threads[i].name);
 	name.appendChild(text);
 	var stacks = document.createElement("div");
 	stacks.setAttribute("class", "stacks");
 	stacks.style.display = "none";
-	element.appendChild(stacks);
+	te.appendChild(stacks);
 	if (thread.stacks != null) {
 		for (var j = 0; j < thread.stacks.length; ++j) {
 			var stack = document.createElement("p");
@@ -26,8 +26,8 @@ for (var i = 0; i < threads.length; ++i) {
 			stacks.appendChild(stack);
 		}
 	}
-	element.appendChild(document.createElement("br"));
-	element.appendChild(document.createElement("br"));
+	te.appendChild(document.createElement("br"));
+	te.appendChild(document.createElement("br"));
 }
 
 function toggleHidden(id) {
