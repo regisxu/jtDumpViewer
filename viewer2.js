@@ -1,90 +1,143 @@
-var html = htmlize(document.getElementsByTagName("p")[0].textContent);
-var list = document.getElementById("list");
-list.innerHTML = html;
+function paint(dump) {
+	var html = htmlize(dump);
+	var list = document.createElement("div");
+	list.innerHTML = html;
 
-var ps = list.getElementsByTagName("p");
-var thread;
-var stacks;
-var isStack = false;
-var nl = document.createElement("div");
-nl.setAttribute("id", "list");
+	var ps = list.getElementsByTagName("p");
+	var thread;
+	var stacks;
+	var isStack = false;
+	var nl = document.createElement("div");
+	nl.setAttribute("id", "dump");
 
-for (var i = 0; i < ps.length; ++i) {
-	if (isThreadHeader(ps[i])) {
-		thread = document.createElement("div");
-		thread.setAttribute("id", oid(ps[i]));
-		var tn = ps[i].cloneNode();
-		thread.appendChild(tn);
-		tname(tn).setAttribute("onclick", "toggleHidden(this)");
-		nl.appendChild(thread);
-	} else if (isState(ps[i])) {
-		stacks = document.createElement("div");
-		stacks.setAttribute("class", "stacks");
-		thread.appendChild(stacks);
+	for (var i = 0; i < ps.length; ++i) {
+		if (isThreadHeader(ps[i])) {
+			thread = document.createElement("div");
+			thread.setAttribute("id", oid(ps[i]));
+			thread.setAttribute("class", "thread");
+			var tn = ps[i].cloneNode();
+			thread.appendChild(tn);
+			tname(tn).setAttribute("onclick", "toggleHidden(this)");
+			nl.appendChild(thread);
+		} else if (isState(ps[i])) {
+			stacks = document.createElement("div");
+			stacks.setAttribute("class", "stacks");
+			thread.appendChild(stacks);
 
-		stacks.appendChild(ps[i].cloneNode());
-		isStack = true;
-	} else if (isStack) {
-		stacks.appendChild(ps[i].cloneNode());
-	}
-}
-
-var parent = list.parentNode;
-parent.removeChild(list);
-parent.appendChild(nl);
-
-function isThreadHeader(p) {
-	var spans = p.getElementsByTagName("span");
-	for (var i = 0; i < spans.length; ++i) {
-		if (spans[i].getAttribute("class") == "tname") {
-			return true;
+			stacks.appendChild(ps[i].cloneNode());
+			isStack = true;
+		} else if (isStack) {
+			stacks.appendChild(ps[i].cloneNode());
+		} else {
+			nl.appendChild(ps[i].cloneNode());
 		}
 	}
-	return false;
+
+	var types = ["oid", "tname", "daemon", "prio", "tid", "nid", "state", "method", "mdesc", "class"];
+	var searchable = ["oid", "daemon", "prio", "state", "method", "class"];
+
+	var color = d3.scale.category10().domain(types);
+
+	for (var j = 0; j < types.length; ++j) {
+		var type = types[j];
+		spans = nl.querySelectorAll("span." + type);
+		for (var i = 0; i < spans.length; ++i) {
+			spans[i].style.color = color(type);
+		}
+		if (isSearchable(searchable, type)) {
+			for (var i = 0; i < spans.length; ++i) {
+				spans[i].setAttribute("onclick", "searchSpan(this)");
+				spans[i].style.cursor = "pointer";
+			}
+		}
+	}
+	if (document.getElementById("dump") != null) {
+		document.body.removeChild(document.getElementById("dump"));
+	}
+	document.body.appendChild(nl);
+
+}
+
+function isSearchable(searchable, type) {
+	return ploop(searchable, function(d) { return d == type; });
+}
+
+function isThreadHeader(p) {
+	return p.querySelector("span.tname") != null;
 }
 
 function tname(p) {
-	var spans = p.getElementsByTagName("span");
-	for (var i = 0; i < spans.length; ++i) {
-		if (spans[i].getAttribute("class") == "tname") {
-			return spans[i];
-		}
-	}
-	return "";
+	return p.querySelector("span.tname");
 }
 
 function oid(p) {
-	var spans = p.getElementsByTagName("span");
-	for (var i = 0; i < spans.length; ++i) {
-		if (spans[i].getAttribute("class") == "oid") {
-			return spans[i].textContent;
-		}
+	var span = p.querySelector("span.oid");
+	if (span != null) {
+		return span.textContent;
 	}
 	return "";
 }
 
 function isState(p) {
-	var spans = p.getElementsByTagName("span");
-	for (var i = 0; i < spans.length; ++i) {
-		if (spans[i].getAttribute("class") == "state") {
-			return true;
-		}
-	}
-	return false;	
+	return p.querySelector("span.state") != null;
 }
 
 function toggleHidden(n) {
 	var parent = n.parentNode.parentNode;
-
-	for (var i = 0; i < parent.childNodes.length; ++i) {
-		var child = parent.childNodes[i];
-		if (child.getAttribute("class") == "stacks") {
-			if (child.style.display == "none") {
-				child.style.display = "";
-			} else {
-				child.style.display = "none";
-			}
-			return;
+	var stacks = parent.querySelector(".stacks");
+	if (stacks != null) {
+		if (stacks.style.display == "none") {
+			stacks.style.display = "";
+		} else {
+			stacks.style.display = "none";
 		}
 	}
+}
+
+document.getElementById("fpath").addEventListener("keypress", function(event) { if(event.keyCode != 13) { return; }; paint(readFile(event)); document.getElementById("tdump").value = "";}, false);
+document.getElementById("tdump").addEventListener("keypress", function(event) { if(event.keyCode != 13) { return; }; paint(event.target.value); document.getElementById("fpath").value = "";}, false);
+
+function readFile(event) {
+	if (event.target.value == null || event.target.value.trim() == "") {
+		return;
+	}
+    var rawFile = new XMLHttpRequest();
+    rawFile.open("GET", event.target.value, false);
+    rawFile.send(null);
+	if(rawFile.status === 200 || rawFile.status == 0) {
+        return rawFile.responseText;
+    }
+}
+
+function searchSpan(span) {
+	if(span.getAttribute("class") != null) {
+		show(function(thread) { return search(thread, span.getAttribute("class"), span.textContent); });
+	}
+}
+
+function show(select) {
+	loop(document.querySelectorAll(".thread"),
+		 function(thread) { thread.style.display = (select(thread) ? "" : "none"); }
+		);
+}
+
+function search(thread, type, value) {
+	return ploop(thread.querySelectorAll("span." + type),
+				 function(span) { return span.textContent == value }
+				);
+}
+
+function loop(list, f) {
+	for (var i = 0; i < list.length; ++i) {
+		f(list[i]);
+	}
+}
+
+function ploop(list, p) {
+	for (var i = 0; i < list.length; ++i) {
+		if (p(list[i])) {
+			return true;
+		}
+	}
+	return false;
 }

@@ -5,11 +5,21 @@ function htmlize(dump) {
 	context.parser = parseHeader;
 	context.html = "";
 	for (var i = 0; i < lines.length; ++i) {
-		context.parser = context.parser(context, lines[i]);
+		context.parser = context.parser(context, trim(lines[i]));
 		html += p(null, convertHeadingSpace(context.html)) + "\n";
 	}
 
 	return html;
+}
+
+function trim(line) {
+	var count = 0;
+	for (var i = line.length - 1; i >= 0; --i) {
+		if (line[i] == "\r") {
+			count += 1;
+		}
+	}
+	return line.substr(0, line.length - count);
 }
 
 function convertHeadingSpace(str) {
@@ -55,7 +65,11 @@ function parseState(context, line) {
 		return parseHeader;
 	}
 	var htmlize = htmlizer(line);
-	context.html = htmlize.until(":").text().between(" ").span("state").end().text().result;
+	if (line.indexOf("(") != -1) {
+		context.html = htmlize.until(":").text().between(" ").span("state").end().text().result;
+	} else {
+		context.html = htmlize.until(": ").text().end().span("state").result;
+	}
 	return parseTrace;
 }
 
@@ -73,10 +87,11 @@ function parseTrace(context, line) {
 			.until(")").span("mdesc")
 			.end().text()
 			.result;
-	} else if (line.indexOf("- locked ") != -1) {
+	} else if (line.indexOf("- None") != -1) {
+		context.html = line;
+	} else if (line.trim().indexOf("- ") == 0) {
 		var htmlize = htmlizer(line);
 		context.html = htmlize
-			.until("- locked ").text()
 			.between("<", ">").span("oid")
 			.until("(a ").text()
 			.until(")").span("class")
@@ -206,14 +221,6 @@ function htmlizer(dump) {
 		return htmlize.htmlize(function (value) {
 			return span(key, value);
 		});
-	}
-
-	htmlize.pair = function(p, f) {
-		return htmlize.htmlize(function(value) {
-			var values = p(value);
-			return f(values[0], values[1]);
-		});
-		return htmlize;
 	}
 
 	htmlize.htmlize = function(f) {
