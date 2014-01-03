@@ -40,20 +40,22 @@ function paint(dump) {
 
 	for (var j = 0; j < types.length; ++j) {
 		var type = types[j];
-		spans = nl.querySelectorAll("span." + type);
-		for (var i = 0; i < spans.length; ++i) {
-			spans[i].style.color = color(type);
-		}
+		var spans = nl.querySelectorAll("span." + type);
+		loop(spans, function(span) { span.style.color = color(type); });
 		if (isSearchable(searchable, type)) {
-			for (var i = 0; i < spans.length; ++i) {
-				spans[i].setAttribute("onclick", "searchSpan(this)");
-				spans[i].style.cursor = "pointer";
-			}
+			loop(spans,
+				 function(span) {
+					 span.setAttribute("onclick", "searchSpan(this)");
+					 span.style.cursor = "pointer";
+				 }
+				);
 		}
 	}
+
 	if (document.getElementById("dump") != null) {
 		document.body.removeChild(document.getElementById("dump"));
 	}
+
 	document.body.appendChild(nl);
 
 }
@@ -86,11 +88,7 @@ function toggleHidden(n) {
 	var parent = n.parentNode.parentNode;
 	var stacks = parent.querySelector(".stacks");
 	if (stacks != null) {
-		if (stacks.style.display == "none") {
-			stacks.style.display = "";
-		} else {
-			stacks.style.display = "none";
-		}
+		stacks.style.display == "none" ? stacks.style.display = "" : stacks.style.display = "none";
 	}
 }
 
