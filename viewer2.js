@@ -110,6 +110,35 @@ document.getElementById("tdump").addEventListener("keypress",
                                                   },
                                                   false);
 
+document.getElementById("search").addEventListener("keyup", function(event) { searchText(this.value); });
+
+function search(txt) {
+    if (txt.split(":").length == 2) {
+        var kv = txt.split(":");
+        searchPair(kv[0], kv[1]);
+    } else {
+        searchText(txt);
+    }
+}
+
+function searchText(txt) {
+    show(function(thread) {
+        return ploop(thread.querySelectorAll("p"),
+                     function(p) {
+                         return p.textContent.toLowerCase().indexOf(txt.toLowerCase()) != -1;
+                     });
+    });
+}
+
+function searchPair(type, value) {
+    show(function(thread) {
+        return ploop(thread.querySelectorAll("span." + type),
+                     function(sp) {
+                         return sp.textContent == value;
+                     });
+    });
+}
+
 function readFile(event) {
     if (event.target.value == null || event.target.value.trim() == "") {
         return;
@@ -124,7 +153,9 @@ function readFile(event) {
 
 function searchSpan(span) {
     if(span.getAttribute("class") != null) {
-        show(function(thread) { return search(thread, span.getAttribute("class"), span.textContent); });
+        var s = document.getElementById("search");
+        s.value = span.getAttribute("class") + ":" + span.textContent;
+        search(s.value);
     }
 }
 
@@ -132,12 +163,6 @@ function show(select) {
     loop(document.querySelectorAll(".thread"),
          function(thread) { thread.style.display = (select(thread) ? "" : "none"); }
         );
-}
-
-function search(thread, type, value) {
-    return ploop(thread.querySelectorAll("span." + type),
-                 function(span) { return span.textContent == value }
-                );
 }
 
 function loop(list, f) {
