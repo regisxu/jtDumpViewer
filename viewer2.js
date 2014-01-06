@@ -47,6 +47,10 @@ function paint(dump) {
     d3.selectAll("#dump span").attr("style",
                                     function(d) {
                                         return "color:" + color(this.getAttribute("class")) + ";" + cursor(this);
+                                    })
+                              .attr("onclick",
+                                    function(d) {
+                                        return isSearchable(searchable, this.getAttribute("class")) ? "searchSpan(this)" : null;
                                     });
 }
 
@@ -90,8 +94,25 @@ function toggleHidden(n) {
     }
 }
 
-document.getElementById("fpath").addEventListener("keypress", function(event) { if(event.keyCode != 13) { return; }; paint(readFile(event)); document.getElementById("tdump").value = "";}, false);
-document.getElementById("tdump").addEventListener("keypress", function(event) { if(event.keyCode != 13) { return; }; paint(event.target.value); document.getElementById("fpath").value = "";}, false);
+document.getElementById("fpath").addEventListener("keypress",
+                                                  function(event) {
+                                                      if(event.keyCode != 13) {
+                                                          return;
+                                                      }
+                                                      paint(readFile(event));
+                                                      document.getElementById("tdump").value = "";
+                                                  },
+                                                  false);
+
+document.getElementById("tdump").addEventListener("keypress",
+                                                  function(event) {
+                                                      if(event.keyCode != 13) {
+                                                          return;
+                                                      }
+                                                      paint(event.target.value);
+                                                      document.getElementById("fpath").value = "";
+                                                  },
+                                                  false);
 
 function readFile(event) {
     if (event.target.value == null || event.target.value.trim() == "") {
