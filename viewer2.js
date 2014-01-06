@@ -20,7 +20,6 @@ function paint(dump) {
             thread.setAttribute("class", "thread");
             var tn = ps[i].cloneNode();
             thread.appendChild(tn);
-            tname(tn).setAttribute("onclick", "toggleHidden(this)");
             nl.appendChild(thread);
         } else if (isState(ps[i])) {
             stacks = document.createElement("div");
@@ -56,6 +55,8 @@ function paint(dump) {
                                     function(d) {
                                         return isSearchable(searchable, this.getAttribute("class")) ? "searchSpan(this)" : null;
                                     });
+
+    d3.selectAll("#dump span.tname").attr("onclick", "toggleHidden(this)");
 }
 
 function isSearchable(searchable, type) {
@@ -64,10 +65,6 @@ function isSearchable(searchable, type) {
 
 function isThreadHeader(p) {
     return p.querySelector("span.tname") != null;
-}
-
-function tname(p) {
-    return p.querySelector("span.tname");
 }
 
 function oid(p) {
