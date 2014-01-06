@@ -1,3 +1,6 @@
+var types = ["oid", "tname", "daemon", "prio", "tid", "nid", "state", "method", "mdesc", "class"];
+var searchable = ["oid", "daemon", "prio", "state", "method", "class"];
+
 function paint(dump) {
 	var html = htmlize(dump);
 	var list = document.createElement("div");
@@ -33,32 +36,27 @@ function paint(dump) {
 		}
 	}
 
-	var types = ["oid", "tname", "daemon", "prio", "tid", "nid", "state", "method", "mdesc", "class"];
-	var searchable = ["oid", "daemon", "prio", "state", "method", "class"];
-
-	var color = d3.scale.category10().domain(types);
-
-	for (var j = 0; j < types.length; ++j) {
-		var type = types[j];
-		var spans = nl.querySelectorAll("span." + type);
-		loop(spans, function(span) { span.style.color = color(type); });
-		if (isSearchable(searchable, type)) {
-			loop(spans,
-				 function(span) {
-					 span.setAttribute("onclick", "searchSpan(this)");
-					 span.style.cursor = "pointer";
-				 }
-				);
-		}
-	}
-
 	if (document.getElementById("dump") != null) {
 		document.body.removeChild(document.getElementById("dump"));
 	}
 
 	document.body.appendChild(nl);
 
+	var color = d3.scale.category10().domain(types);
+
+	d3.selectAll("#dump span").attr("style",
+									function(d) {
+										return "color:" + color(this.getAttribute("class")) + ";" + cursor(this);
+									});
 }
+
+function cursor(span) {
+	if (isSearchable(searchable, span.getAttribute("class"))) {
+		return "cursor:pointer;";
+	}
+	return "";
+}
+
 
 function isSearchable(searchable, type) {
 	return ploop(searchable, function(d) { return d == type; });
