@@ -44,23 +44,19 @@ function paint(dump) {
 
     var color = d3.scale.category10().domain(types);
 
-    d3.selectAll("#dump span").attr("style",
-                                    function(d) {
-                                        return "color:" + color(this.getAttribute("class")) + ";" + cursor(this);
-                                    })
+    d3.selectAll("#dump span").style("color",
+                                     function(d) {
+                                         return color(this.getAttribute("class"));
+                                     })
+                              .style("cursor",
+                                     function(d) {
+                                         return isSearchable(searchable, this.getAttribute("class")) ? "pointer" : null;
+                                     })
                               .attr("onclick",
                                     function(d) {
                                         return isSearchable(searchable, this.getAttribute("class")) ? "searchSpan(this)" : null;
                                     });
 }
-
-function cursor(span) {
-    if (isSearchable(searchable, span.getAttribute("class"))) {
-        return "cursor:pointer;";
-    }
-    return "";
-}
-
 
 function isSearchable(searchable, type) {
     return ploop(searchable, function(d) { return d == type; });
